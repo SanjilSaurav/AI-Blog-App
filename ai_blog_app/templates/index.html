@@ -82,11 +82,11 @@
             </div>
 
             <!--Section for loading circle-->
-            <div style="display: none;" id="loadingCircle" class="load"></div>
+            <div style="display: none;" id="loading-circle" class="load"></div>
 
             <!--Generated Blog display section-->
             <section class="mt-10 flex-grow">
-                <h2 class="text-xl mb-4 font-semibold">GEnerated Blog Article</h2>
+                <h2 class="text-xl mb-4 font-semibold">Generated Blog Article</h2>
                 <div id="blogContent" class="mt-2 text-gray-700 space-y-4">
                     
                 </div>
@@ -98,13 +98,16 @@
     </footer>
     <script>
         document.getElementById('generateBlogButton').addEventListener('click', async() => {
+        console.log('Hello');
         const youtubeLink = document.getElementById('youtubeLink').value;
-        const loadingIndicator = document.getElementById('loading')
-        const blogContent = document.getElementById('blogContent')
+        const blogContent = document.getElementById('blogContent');
+        console.log('blogcontent: ', blogContent);
+        console.log('youtubelink: ', youtubeLink);
 
         if(youtubeLink) {
+            console.log('Got YouTube Link');
             document.getElementById('loading-circle').style.display = 'block';
-            loadingIndicator.classList.remove('hidden');
+            console.log('Error');
             blogContent.innerHTML = '';
 
             const endpointUrl = '/generate-blog';
@@ -119,13 +122,11 @@
                 });
 
                 const data = await response.json();
-
+                console.log('Blog Content 2');
                 blogContent.innerHTML = data.content;
-                loadingIndicator.classList.add('hidden')
             } catch (error){
                 console.error("Error occured: ", error);
                 alert("Something went wrong. Please try again later.");
-                loadingIndicator.classList.add('hidden');
             }
 
             document.getElementById('loading-circle').style.display = 'none';

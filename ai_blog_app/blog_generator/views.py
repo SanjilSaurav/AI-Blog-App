@@ -5,7 +5,15 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from django.conf import settings
 import json
+from pytube import YouTube
+import os
+import requests
+from dotenv import load_dotenv
+import assemblyai as aai
+import yt_dlp
+from openai import OpenAI
 
 # Create your views here.
 @login_required
@@ -18,21 +26,59 @@ def generate_blog(request):
         try:
             data = json.loads(request.body)
             yt_link = data['link']
-            return JsonResponse({'content': yt_link})
         except (KeyError, json.JSONDecodeError):
             return JsonResponse({'error': 'Invalid data sent'}, status=400)
         
         # get yt title
+        # title = yt_title(yt_link)
 
         # get transcript
-
-        # use openAi to generate the blog
+        transcription = get_transcription(yt_link)
+        if not transcription:
+            return JsonResponse({'error':"Failed to get transcript"}, status=500)
+        # # use openAi to generate the blog
+        # blog_content = generate_blog_from_transcription(transcription)
+        # if not blog_content:
+        #     return JsonResponse({'error':"Failed to generate blog article."}, status=500)
 
         #save blog article to database
 
         # return blog article as a response
+        return JsonResponse({'content': transcription})
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+# def yt_title(link):
+#     yt = YouTube(link)
+#     title = yt.title
+#     return title
+
+def download_audio(link):
+    output_dir = "media"  # Folder where files will be saved
+    os.makedirs(output_dir, exist_ok=True)  # Create folder if it doesn't exist
+
+    ydl_opts = {
+        'format': 'bestaudio/best',  # Get the best available audio format
+        'outtmpl': f'{output_dir}/%(title)s.%(ext)s'  # Save as "downloads/VideoTitle.[ext]"
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info(link, download=True)  # Download and extract info
+        file_path = ydl.prepare_filename(info_dict)  # Get the filename
+
+    return file_path  # Return the downloaded file path
+
+# Function to get transcription using AssemblyAI
+def get_transcription(link):
+    audio_file = download_audio(link)  # Download audio in original format
+
+    # Set AssemblyAI API key
+    aai.settings.api_key = ''
+
+    transcriber = aai.Transcriber()  # Initialize transcriber
+    transcript = transcriber.transcribe(audio_file)  # Transcribe audio
+    return transcript.text  # Return transcription text
+
 
 def user_login(request):
     if request.method == 'POST':
