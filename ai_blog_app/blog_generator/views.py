@@ -7,13 +7,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.conf import settings
 import json
-from pytube import YouTube
 import os
 import requests
 from dotenv import load_dotenv
 import assemblyai as aai
 import yt_dlp
 from openai import OpenAI
+
+load_dotenv("./.env")
 
 # Create your views here.
 @login_required
@@ -36,15 +37,15 @@ def generate_blog(request):
         transcription = get_transcription(yt_link)
         if not transcription:
             return JsonResponse({'error':"Failed to get transcript"}, status=500)
-        # # use openAi to generate the blog
-        # blog_content = generate_blog_from_transcription(transcription)
-        # if not blog_content:
-        #     return JsonResponse({'error':"Failed to generate blog article."}, status=500)
+        # use openAi to generate the blog
+        blog_content = generate_blog_from_transcription(transcription)
+        if not blog_content:
+            return JsonResponse({'error':"Failed to generate blog article."}, status=500)
 
         #save blog article to database
 
         # return blog article as a response
-        return JsonResponse({'content': transcription})
+        return JsonResponse({'content': blog_content})
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
@@ -73,12 +74,38 @@ def get_transcription(link):
     audio_file = download_audio(link)  # Download audio in original format
 
     # Set AssemblyAI API key
-    aai.settings.api_key = ''
+    aai.settings.api_key = os.getenv("AAI_API_KEY")
 
     transcriber = aai.Transcriber()  # Initialize transcriber
     transcript = transcriber.transcribe(audio_file)  # Transcribe audio
     return transcript.text  # Return transcription text
 
+def generate_blog_from_transcription(transcription):
+    token = os.getenv("GITHUB_TOKEN")
+    base_url = "https://models.inference.ai.azure.com"
+    model_name = "gpt-4o"
+
+    client = OpenAI(
+        base_url=base_url,
+        api_key=token,
+    )
+
+    prompt = f"Based on the following transcript from a YouTube video, write a comprehensive blog article, write it based on the transcript, but dont make it look like a youtube video, make it look like a proper blog article:\n\n{transcription}\n\nArticle:"
+
+    response = client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+        temperature=1.0,
+        top_p=1.0,
+        max_tokens=1000,
+        model=model_name
+    )
+    generated_content = response.choices[0].message.content
+    return generated_content
 
 def user_login(request):
     if request.method == 'POST':
