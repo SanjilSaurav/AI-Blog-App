@@ -15,6 +15,7 @@ The **AI Blog App** is a Django-based web application that takes a **YouTube vid
 
 - **Backend**: Django (Python)
 - **Frontend**: HTML, Django Templates
+- **Databaase**: PostgreSQL
 - **AI**: OpenAI GPT
 - **Transcript Extraction**: AssemblyAI-api
 - **Env Handling**: python-dotenv
@@ -67,6 +68,11 @@ pip install -r requirements.txt
 Create a `.env` file in the root folder:
 ```
 OPENAI_API_KEY=your_openai_api_key_here
+AAI_API_KEY=your_assemblyai_api_key
+GITHUB_TOKEN=your_github_token
+DB_USER_NAME=your_database_username
+DB_PASSWORD=your_database_password
+DB_NAME=your_database_name
 ```
 
 5. **Run the development server**
