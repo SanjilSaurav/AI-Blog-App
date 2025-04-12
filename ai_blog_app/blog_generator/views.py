@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 import assemblyai as aai
 import yt_dlp
 from openai import OpenAI
+from .models import BlogPost
 
 load_dotenv("./.env")
 
@@ -34,7 +35,7 @@ def generate_blog(request):
         # title = yt_title(yt_link)
 
         # get transcript
-        transcription = get_transcription(yt_link)
+        transcription, yt_title = get_transcription(yt_link)
         if not transcription:
             return JsonResponse({'error':"Failed to get transcript"}, status=500)
         # use openAi to generate the blog
@@ -43,6 +44,13 @@ def generate_blog(request):
             return JsonResponse({'error':"Failed to generate blog article."}, status=500)
 
         #save blog article to database
+        new_blog_article = BlogPost.objects.create(
+            user=request.user,
+            youtube_title=yt_title,
+            youtube_link=yt_link,
+            generated_content=blog_content,
+        )
+        new_blog_article.save()
 
         # return blog article as a response
         return JsonResponse({'content': blog_content})
@@ -66,19 +74,19 @@ def download_audio(link):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(link, download=True)  # Download and extract info
         file_path = ydl.prepare_filename(info_dict)  # Get the filename
-
-    return file_path  # Return the downloaded file path
+        yt_title = info_dict.get("title", "Unknown Title")
+    return file_path, yt_title  # Return the downloaded file path
 
 # Function to get transcription using AssemblyAI
 def get_transcription(link):
-    audio_file = download_audio(link)  # Download audio in original format
+    audio_file,yt_link = download_audio(link)  # Download audio in original format
 
     # Set AssemblyAI API key
     aai.settings.api_key = os.getenv("AAI_API_KEY")
 
     transcriber = aai.Transcriber()  # Initialize transcriber
     transcript = transcriber.transcribe(audio_file)  # Transcribe audio
-    return transcript.text  # Return transcription text
+    return transcript.text, yt_link  # Return transcription text
 
 def generate_blog_from_transcription(transcription):
     token = os.getenv("GITHUB_TOKEN")
