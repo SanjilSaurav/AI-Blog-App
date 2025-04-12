@@ -91,10 +91,6 @@ Open your browser and go to:
 - **Input**: `https://www.youtube.com/watch?v=dQw4w9WgXcQ`
 - **Output**: A well-structured blog post based on the video's transcript.
 
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to fork the repo and submit a pull request.
-
 ---
 
 Made with ❤️ by [Saurav Kumar](https://github.com/SanjilSaurav)
